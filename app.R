@@ -1,7 +1,7 @@
 library(shiny)
 library(rvest)
 library(DT)
-library(dplyr)
+#library(dplyr)
 
 webpage <- read_html("https://virihealth.com/full-details/")
 
@@ -54,12 +54,15 @@ ui <- fluidPage(
 # Define server logic required to have an interactive dashboard ----
 server <- function(input, output, session) {
   
-  
+  filtered <- reactive({
+    rows <- (Table2$Date2 >= input$dateRange[1] & Table2$Date2 <= input$dateRange[2])
+    Table2[rows,,drop = FALSE] 
+    
+  })
+    
   observe({
-    output$table <- renderDataTable({Table2 %>%
-        filter(Date2 >= input$dateRange[1] & 
-                 Date2 <= input$dateRange[2])
-      },options = list(pageLength = 10,columnDefs = list(list(
+    output$table <- renderDataTable(filtered()
+      ,options = list(pageLength = 10,columnDefs = list(list(
         targets = 8, 
         render = JS(
           "function(data, type, row, meta) {",
