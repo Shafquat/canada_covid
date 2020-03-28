@@ -1,7 +1,6 @@
 library(shiny)
 library(rvest)
 library(DT)
-#library(dplyr)
 
 webpage <- read_html("https://virihealth.com/full-details/")
 
