@@ -10,6 +10,9 @@ Table2 <- webpage %>%
   .[[2]] %>%
   html_table(fill = TRUE)
 
+#Fix Date field
+Table2$Date <- as.Date(paste0(Table2$Date,"-","2020"),"%d-%b-%Y")
+
 # Define UI for app that creates a dashboard ----
 ui <- fluidPage(
   
