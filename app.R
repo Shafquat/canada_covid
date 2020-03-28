@@ -1,6 +1,7 @@
 library(shiny)
 library(rvest)
 library(DT)
+library(dplyr)
 
 webpage <- read_html("https://virihealth.com/full-details/")
 
@@ -11,7 +12,7 @@ Table2 <- webpage %>%
   html_table(fill = TRUE)
 
 #Fix Date field
-Table2$Date <- as.Date(paste0(Table2$Date,"-","2020"),"%d-%b-%Y")
+Table2$Date2 <- as.Date(paste0(Table2$Date,"-","2020"),"%d-%b-%Y")
 
 # Define UI for app that creates a dashboard ----
 ui <- fluidPage(
@@ -29,7 +30,12 @@ ui <- fluidPage(
       
       
       # Input: Select a Date Range ----
-      #sliderInput(inputId = "year", "Select a Year Range", min=1979, max=2020, value=c(1979, 2020), sep = ""),
+      dateRangeInput("dateRange", 
+                     "Select date range:",
+                     start = as.Date('2020-01-25'),
+                     #end = as.Date('2020-01-30')
+                     ),
+      
       width = 3),
     # Main panel for displaying outputs ----
     mainPanel(
@@ -50,19 +56,19 @@ server <- function(input, output, session) {
   
   
   observe({
-    #outputtable1 <- filtered()[,c("PERMIT_NUM","ADDRESS","STRUCTURE_TYPE","PERMIT_TYPE","WORK","APPLICATION_DATE","ISSUED_DATE","time_to_issue","EST_CONST_COST","DESCRIPTION")]
-    #colnames(outputtable1) <- c("Permit #","Address","Structure","Permit Type","Work","Applied On","Issued On","Time to Issue (days)","Est. Cost ($)","Details")
-    output$table <- renderDataTable(Table2,
-                                    options = list(pageLength = 10,columnDefs = list(list(
-                                      targets = 8,
-                                      render = JS(
-                                        "function(data, type, row, meta) {",
-                                        "return type === 'display' && data.length > 20 ?",
-                                        "'<span title=\"' + data + '\">' + data.substr(0, 20) + '...</span>' : data;",
-                                        "}")
-                                    ))), callback = JS('table.page(3).draw(false);')
-                                    #options = list(pageLength = 5, width="100%", scrollX = TRUE)
-                                    , rownames= FALSE
+    output$table <- renderDataTable({Table2 %>%
+        filter(Date2 >= input$dateRange[1] & 
+                 Date2 <= input$dateRange[2])
+      },options = list(pageLength = 10,columnDefs = list(list(
+        targets = 8, 
+        render = JS(
+          "function(data, type, row, meta) {",
+          "return type === 'display' && data.length > 20 ?",
+          "'<span title=\"' + data + '\">' + data.substr(0, 20) + '...</span>' : data;",
+          "}")
+      ))), callback = JS('table.page(3).draw(false);')
+      #options = list(pageLength = 5, width="100%", scrollX = TRUE)
+      , rownames= FALSE
     )
   })
 }
