@@ -1,6 +1,9 @@
 library(shiny)
 library(rvest)
 library(DT)
+library(leaflet)
+library(geojsonio)
+library(tigris)
 
 webpage <- read_html("https://virihealth.com/full-details/")
 
@@ -12,6 +15,15 @@ Table2 <- webpage %>%
 
 #Fix Date field
 Table2$Date2 <- as.Date(paste0(Table2$Date,"-","2020"),"%d-%b-%Y")
+
+# Groupby("Prov").count()
+prov_count <- data.frame(table(Table2$Prov))
+
+# Read in Provinces data
+provinces <- geojsonio::geojson_read("canada.geojson", what = "sp")
+
+#merge shapefile and dataframe
+m <- geo_join(provinces,prov_count,by_sp='abbr',by_df='Var1',how="left")
 
 # Define UI for app that creates a dashboard ----
 ui <- fluidPage(
@@ -38,6 +50,8 @@ ui <- fluidPage(
       width = 3),
     # Main panel for displaying outputs ----
     mainPanel(
+      # Canadian Provinces
+      leafletOutput("mymap", height=400),
       
       # Let user know of mapping restriction ----
       h5("Data from Virihealth"),     
@@ -61,7 +75,7 @@ server <- function(input, output, session) {
     
   observe({
     output$table <- renderDataTable(filtered()
-      ,options = list(pageLength = 10,columnDefs = list(list(
+      ,options = list(pageLength = 5,columnDefs = list(list(
         targets = 8, 
         render = JS(
           "function(data, type, row, meta) {",
@@ -72,6 +86,17 @@ server <- function(input, output, session) {
       #options = list(pageLength = 5, width="100%", scrollX = TRUE)
       , rownames= FALSE
     )
+  })
+  
+  pal <- colorNumeric("viridis", NULL,reverse=TRUE)
+  output$mymap <- renderLeaflet({
+    leaflet(m) %>%
+      addTiles() %>%
+      addPolygons(stroke = FALSE, smoothFactor = 0.3, fillOpacity = 1
+                 ,fillColor = ~pal(Freq)
+                   ,label = ~paste0(abbr, ": ", formatC(Freq, big.mark = ","))) %>%
+                  addLegend(pal = pal, values = ~Freq, opacity = 0.8,
+                 labFormat = labelFormat(transform = function(x) sort(x)))
   })
 }
 
