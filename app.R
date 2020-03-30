@@ -16,14 +16,8 @@ Table2 <- webpage %>%
 #Fix Date field
 Table2$Date2 <- as.Date(paste0(Table2$Date,"-","2020"),"%d-%b-%Y")
 
-# Groupby("Prov").count()
-prov_count <- data.frame(table(Table2$Prov))
-
 # Read in Provinces data
 provinces <- geojsonio::geojson_read("canada.geojson", what = "sp")
-
-#merge shapefile and dataframe
-m <- geo_join(provinces,prov_count,by_sp='abbr',by_df='Var1',how="left")
 
 # Define UI for app that creates a dashboard ----
 ui <- fluidPage(
@@ -46,6 +40,8 @@ ui <- fluidPage(
                      start = as.Date('2020-01-25'),
                      #end = as.Date('2020-01-30')
                      ),
+      # Input: Select Province ----
+      selectInput(inputId = "s_prov", "Select Province", choices=c("All", sort(unique(as.character(Table2$Prov))))),
       
       width = 3),
     # Main panel for displaying outputs ----
@@ -68,8 +64,10 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   filtered <- reactive({
-    rows <- (Table2$Date2 >= input$dateRange[1] & Table2$Date2 <= input$dateRange[2])
+    rows <- (Table2$Date2 >= input$dateRange[1] & Table2$Date2 <= input$dateRange[2]) &
+      (input$s_prov == "All" | Table2$Prov==input$s_prov)
     Table2[rows,,drop = FALSE] 
+    
     
   })
     
@@ -87,16 +85,23 @@ server <- function(input, output, session) {
       , rownames= FALSE
     )
   })
-  
-  pal <- colorNumeric("viridis", NULL,reverse=TRUE)
-  output$mymap <- renderLeaflet({
-    leaflet(m) %>%
-      addTiles() %>%
-      addPolygons(stroke = FALSE, smoothFactor = 0.3, fillOpacity = 1
-                 ,fillColor = ~pal(Freq)
-                   ,label = ~paste0(abbr, ": ", formatC(Freq, big.mark = ","))) %>%
-                  addLegend(pal = pal, values = ~Freq, opacity = 0.8,
-                 labFormat = labelFormat(transform = function(x) sort(x)))
+  observe({
+    pal <- colorNumeric("viridis", NULL,reverse=TRUE)
+    
+    # Groupby("Prov").count()
+    prov_count <- data.frame(table(filtered()$Prov))
+    #merge shapefile and dataframe
+    m <- geo_join(provinces,prov_count,by_sp='abbr',by_df='Var1',how="left")
+    
+    output$mymap <- renderLeaflet({
+      leaflet(m) %>%
+        addTiles() %>%
+        addPolygons(stroke = FALSE, smoothFactor = 0.3, fillOpacity = 1
+                   ,fillColor = ~pal(Freq)
+                     ,label = ~paste0(abbr, ": ", formatC(Freq, big.mark = ","))) %>%
+                    addLegend(pal = pal, values = ~Freq, opacity = 0.8,
+                   labFormat = labelFormat(transform = function(x) sort(x)))
+    })
   })
 }
 
