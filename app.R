@@ -4,6 +4,8 @@ library(DT)
 library(leaflet)
 library(geojsonio)
 library(tigris)
+library(ggplot2)
+library(plotly)
 
 webpage <- read_html("https://virihealth.com/full-details/")
 
@@ -48,6 +50,7 @@ ui <- fluidPage(
     mainPanel(
       # Canadian Provinces
       leafletOutput("mymap", height=400),
+      plotlyOutput("bar",height = 600),
       
       # Let user know of mapping restriction ----
       h5("Data from Virihealth"),     
@@ -72,6 +75,11 @@ server <- function(input, output, session) {
   })
     
   observe({
+    
+    outputtable1 <- filtered()[,c("Prov#","Date2","Prov","Health Region","Sex","Age","Source","Details")]
+    colnames(outputtable1) <- c("ID#","Date","Province","Health Region","Sex","Age","Source","Details")
+    
+    
     output$table <- renderDataTable(filtered()
       ,options = list(pageLength = 5,columnDefs = list(list(
         targets = 8, 
@@ -85,9 +93,28 @@ server <- function(input, output, session) {
       , rownames= FALSE
     )
   })
+
+  observe({
+    output$bar <- renderPlotly({
+      H_R <- data.frame(table(filtered()$`Health Region`))
+      
+      ggplot(H_R, aes(Var1,Freq))+
+        geom_bar(stat="identity", color="blue", fill="white") +
+        labs(x = "Health Region", y = "Number of Cases") +
+        theme(axis.text.x = element_text(angle=90)
+        )
+    })
+    #   renderPlot({
+    #   # Groupby("HR").count()
+    #   H_R <- data.frame(table(filtered()$`Health Region`))
+    # 
+    #   barplot(H_R$Freq, main="Number of Cases by Health Region",
+    #           xlab="Health Region")
+    # })
+  })
+    
   observe({
     pal <- colorNumeric("viridis", NULL,reverse=TRUE)
-    
     # Groupby("Prov").count()
     prov_count <- data.frame(table(filtered()$Prov))
     #merge shapefile and dataframe

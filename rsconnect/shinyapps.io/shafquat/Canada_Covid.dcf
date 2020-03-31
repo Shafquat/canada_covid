@@ -5,9 +5,9 @@ account: shafquat
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2021232
-bundleId: 2944646
+bundleId: 2949110
 url: https://shafquat.shinyapps.io/Canada_Covid/
-when: 1585586206.30908
+when: 1585664852.66426
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: .RData|desktop.ini
