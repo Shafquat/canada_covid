@@ -26,7 +26,9 @@ ui <- fluidPage(
   
   # App title ----
   titlePanel("Covid Cases in Canada"),
-  HTML("<h5>Created by <a href=\'https://shafquatarefeen.com/\'>Shafquat Arefeen</a></h5><br>"),
+  HTML("<h5>Created by <a href=\'https://shafquatarefeen.com/\'>Shafquat Arefeen</a></h5>"),
+  HTML("<h5>Report Issues on <a href=\'https://github.com/Shafquat/canada_covid/\'>Github</a></h5>"),
+  HTML("<h5>Data live scraped from <a href=\'https://virihealth.com/full-details/\'>ViriHealth</a></h5>"),
   
   
   # Sidebar layout with input and output definitions ----
